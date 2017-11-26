@@ -1,0 +1,22 @@
+name: IssueAdded
+description: "When issue is added"
+id: github-all
+
+requirements:
+    data:
+        - meta.host: "https://github.com"
+        - meta.object: "issue"
+        - meta.action: "added"
+
+stages:
+    - issue_added:
+        job: test
+        on_success:
+            job: message
+            data:
+                - message: "Good news"
+        on_fail:
+            job: message
+            data:
+                - message: "Bad news"
+

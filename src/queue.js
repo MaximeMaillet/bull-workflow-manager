@@ -5,8 +5,8 @@ const {promisify} = require('util');
 const fs = require('fs');
 const Stage = require('./Stage');
 
-const stageOnSuccess = [];
-const stageOnFail = [];
+let stageOnSuccess = [];
+let stageOnFail = [];
 let queue = null;
 
 /**
@@ -14,22 +14,36 @@ let queue = null;
  */
 module.exports.init = (jobsDirectory) => {
 
-	queue = new Queue(this.getQueueName(), `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`);
+	let redisHost = process.env.REDIS_HOST;
+	let redisPort = process.env.REDIS_PORT;
+
+	if(!redisHost) {
+		console.warn('Missing environnement REDIS_HOST, default used (127.0.0.1)');
+		redisHost = '127.0.0.1';
+	}
+
+	if(!redisPort) {
+		console.warn('Missing environnement REDIS_PORT, default used (6379)');
+		redisPort = 6379;
+	}
+
+	queue = new Queue(this.getQueueName(), `redis://${redisHost}:${redisPort}`);
 
 	processJobs(jobsDirectory, '');
 
 	queue.on('completed', (job, result) => {
-		// Fix for waiting update UI for dont display [Object object]
-		if(result === undefined) {
-			result = {};
-		} else if(typeof(result) === 'string') {
-			result = JSON.parse(result)
-		}
+		result = {
+			"job": result
+		};
 
 		addChildToQueue(job.name, stageOnSuccess, result);
 	});
 
 	queue.on('failed', (job, err) => {
+		err = {
+			"job": err
+		};
+
 		addChildToQueue(job.name, stageOnFail, err);
 	});
 };
@@ -44,12 +58,11 @@ module.exports.getQueueName = () => {
 
 /**
  * Add job to queue
- * @param stage
+ * @param conf
+ * @param data
  */
-module.exports.add = (stage) => {
-	console.log('Add job : '+stage.getJob());
-	addChildJob(stage);
-	queue.add(stage.getJob(), stage.getData());
+module.exports.add = (conf, data) => {
+	addToQueue(conf, data);
 };
 
 /**
@@ -69,17 +82,23 @@ function processJobs(dir, prefix) {
 				else {
 					console.log('Job processed : '+prefix+value.substring(0, value.length - 3));
 					queue.process(prefix+value.substring(0, value.length - 3), function(job) {
-						if(process.env.APP_ENV === 'prod') {
-							return require(`${dir}${value}`)(job);
-						} else if(process.env.APP_ENV === 'test') {
-							throw new Error('Test environment, no jobs executed');
-						} else {
-							throw new Error(`Environment variable is uncorrect : ${process.env.APP_ENV}`);
-						}
+						return require(`${dir}${value}`)(job);
 					});
 				}
 			});
 		});
+}
+
+/**
+ * Create Stage according to conf + add to queue
+ * @param conf
+ * @param data
+ */
+function addToQueue(conf, data) {
+	const stage = new Stage(conf, data);
+	console.log('Add job : '+stage.getJob());
+	addChildJob(stage);
+	queue.add(stage.getJob(), stage.getData());
 }
 
 /**
@@ -89,11 +108,12 @@ function processJobs(dir, prefix) {
  * @param data
  */
 function addChildToQueue(jobName, stages, data) {
+	const self = this;
 	const conf = {};
 	for (const i in stages) {
 		if(stages[i].parent === jobName) {
 			conf[stages[i].name] = stages[i].child;
-			queue.add(new Stage(conf, data));
+			addToQueue(conf, data);
 			stages.splice(i, 1);
 		}
 	}
@@ -103,6 +123,6 @@ function addChildToQueue(jobName, stages, data) {
  * @param stage
  */
 function addChildJob(stage) {
-	stageOnSuccess.concat(stage.getStageOnSuccess());
-	stageOnFail.concat(stage.getStageOnFail());
+	stageOnSuccess = stageOnSuccess.concat(stage.getStageOnSuccess());
+	stageOnFail =	stageOnFail.concat(stage.getStageOnFail());
 }

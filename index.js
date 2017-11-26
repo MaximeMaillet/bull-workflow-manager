@@ -4,7 +4,6 @@ const yaml = require('js-yaml');
 const {promisify} = require('util');
 const fs = require('fs');
 const queue = require('./src/queue');
-const Stage = require('./src/Stage');
 
 let workflowsDirectory = null;
 let jobsDirectory = null;
@@ -14,35 +13,27 @@ let jobsDirectory = null;
  */
 module.exports.init = (config) => {
 	readConfiguration(config);
-
-	if(workflowsDirectory === null) {
-		throw new Error('Workflows directory missing');
-	}
-
-	if(jobsDirectory === null) {
-		throw new Error('Jobs directory missing');
-	}
-
 	queue.init(jobsDirectory);
 };
 
 /**
  * Register hook
- * @param req
  * @return {Promise.<void>}
+ * @param workflowId
+ * @param data
  */
-module.exports.register = async(req) => {
+module.exports.register = async(workflowId, data) => {
 
 	const workflows = await promisify(fs.readdir)(workflowsDirectory);
 
 	for(const i in workflows) {
 		try {
 			const doc = yaml.safeLoad(fs.readFileSync(`${workflowsDirectory}${workflows[i]}/workflow.yml`, 'utf8'));
-			if(req.params.entity === doc.entity && req.params.action === doc.action) {
-				checkRequirements(doc, req.body);
+			if(workflowId === doc.id) {
+				checkRequirements(doc, data);
 
 				for (const i in doc.stages) {
-					queue.add(new Stage(doc.stages[i], req.body));
+					queue.add(doc.stages[i], data);
 				}
 			}
 		} catch(e) {
@@ -64,19 +55,11 @@ function checkRequirements(doc, data) {
 
 	if(requirements.data) {
 		for(const i in requirements.data) {
+			if(data) {
+				Object.keys(requirements.data[i]).map((key) => {
 
-			Object.keys(requirements.data[i]).map((key) => {
-				let dataCompare = data;
-				if(key.indexOf('.') !== -1) {
-					const arrayKeys = key.split('.');
-					for(const j in arrayKeys) {
-						dataCompare = dataCompare[arrayKeys[j]];
-					}
-				} else {
-					dataCompare = data[key];
-				}
+					const dataCompare = getDataCompareFromKey(key, data);
 
-				if(dataCompare) {
 					if(typeof(requirements.data[i][key]) === 'string') {
 						if(dataCompare !== requirements.data[i][key]) {
 							throw new Error(`[${doc.name}] Requirements not completed : Require ${requirements.data[i][key]} ; Give ${dataCompare}`);
@@ -86,10 +69,38 @@ function checkRequirements(doc, data) {
 							throw new Error(`[${doc.name}] Requirements not completed : Require ${requirements.data[i][key]} ; Give ${dataCompare}`);
 						}
 					}
-				}
-			});
+
+				});
+			} else {
+				throw new Error(`[${doc.name}] Requirements not completed : no data given`);
+			}
 		}
 	}
+}
+
+/**
+ * Get data according to key
+ * @param key
+ * @param data
+ * @return {*}
+ */
+function getDataCompareFromKey(key, data) {
+	let dataCompare = data;
+
+	if(key.indexOf('.') !== -1) {
+		const arrayKeys = key.split('.');
+		for(const j in arrayKeys) {
+			if(dataCompare.hasOwnProperty(arrayKeys[j])) {
+				dataCompare = dataCompare[arrayKeys[j]];
+			}
+		}
+	} else {
+		if(dataCompare.hasOwnProperty(key)) {
+			dataCompare = dataCompare[key];
+		}
+	}
+
+	return dataCompare;
 }
 
 /**
@@ -97,15 +108,31 @@ function checkRequirements(doc, data) {
  * @param config
  */
 function readConfiguration(config) {
-	if (config.workflows_directory) {
+	if (config && config.workflows_directory) {
 		workflowsDirectory = config.workflows_directory;
 	} else {
 		workflowsDirectory = process.env.WORKFLOWS_DIRECTORY;
 	}
 
-	if (config.jobs_directory) {
+	if (config && config.jobs_directory) {
 		jobsDirectory = config.jobs_directory;
 	} else {
 		jobsDirectory = process.env.JOBS_DIRECTORY;
+	}
+
+	if(!workflowsDirectory) {
+		throw new Error('Workflows directory missing');
+	}
+
+	if(!jobsDirectory) {
+		throw new Error('Jobs directory missing');
+	}
+
+	if(workflowsDirectory.substr(workflowsDirectory.length -1) !== '/') {
+		workflowsDirectory = `${workflowsDirectory}/`;
+	}
+
+	if(jobsDirectory.substr(jobsDirectory.length -1) !== '/') {
+		jobsDirectory = `${jobsDirectory}/`;
 	}
 }

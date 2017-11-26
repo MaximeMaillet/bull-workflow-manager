@@ -4,28 +4,28 @@
  * @return {Stage}
  * @constructor
  */
-module.exports = (config, data) => {
+module.exports = Stage;
+
+function Stage(config, data) {
 	const name = Object.keys(config)[0];
 	this.job = config[name]['job'];
 	this.data = data;
-
-	this.data['jobs_data'] = {};
-
+	this.data['workflow'] = {};
 	this.stageOnSuccess = [];
 	this.stageOnFail = [];
 
 	if (config[name]['on_success']) {
-		stageOnSuccess.push({
+		this.stageOnSuccess.push({
 			'name': config[name]['on_success']['name'] || `${name}_on_success`,
-			'parent': job,
+			'parent': this.job,
 			'child': config[name]['on_success']
 		});
 	}
 
 	if (config[name]['on_fail']) {
-		stageOnFail.push({
+		this.stageOnFail.push({
 			'name': config[name]['on_fail']['name'] || `${name}_on_fail`,
-			'parent': job,
+			'parent': this.job,
 			'child': config[name]['on_fail']
 		});
 	}
@@ -33,7 +33,7 @@ module.exports = (config, data) => {
 	const jobsData = config[name]['data'];
 	if(jobsData && jobsData.length > 0) {
 		for(let i in jobsData) {
-			this.data['jobs_data'][Object.keys(jobsData[i])[0]] = jobsData[i][Object.keys(jobsData[i])[0]];
+			this.data['workflow'][Object.keys(jobsData[i])[0]] = jobsData[i][Object.keys(jobsData[i])[0]];
 		}
 	}
 
