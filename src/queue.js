@@ -108,7 +108,6 @@ function addToQueue(conf, data) {
  * @param data
  */
 function addChildToQueue(jobName, stages, data) {
-	const self = this;
 	const conf = {};
 	for (const i in stages) {
 		if(stages[i].parent === jobName) {
