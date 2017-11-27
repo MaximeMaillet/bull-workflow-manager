@@ -1,5 +1,5 @@
 {
-  "name": "workflow-manager",
+  "name": "bull-workflow-manager",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,7 +10,7 @@
     "type": "git",
     "url": "git+https://github.com/MaximeMaillet/workflow-manager.git"
   },
-  "author": "Maxime Maillet <maxime.maillet93@gmail.com>",
+  "author": "2max <maxime.maillet93@gmail.com>",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/MaximeMaillet/workflow-manager/issues"
