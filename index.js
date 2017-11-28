@@ -24,16 +24,13 @@ module.exports.init = (config) => {
  */
 module.exports.register = async(workflowId, data) => {
 
-	const workflowConfigFiles = await analyzeWorkflow(workflowsDirectory);
+	const workflowConfigFiles = await analyzeWorkflows(workflowsDirectory);
 
 	for(const i in workflowConfigFiles) {
 		try {
 			if(workflowId === workflowConfigFiles[i].id) {
 				checkRequirements(workflowConfigFiles[i], data);
-
-				for (const j in workflowConfigFiles[i].stages) {
-					queue.add(workflowConfigFiles[i].stages[j], data);
-				}
+				queue.processStages(workflowConfigFiles[i], data);
 			}
 		} catch(e) {
 			console.log(e.message);
@@ -45,16 +42,16 @@ module.exports.register = async(workflowId, data) => {
  * @param directory
  * @returns {Promise.<Array>}
  */
-async function analyzeWorkflow(directory) {
+async function analyzeWorkflows(directory) {
 	const workflows = await promisify(fs.readdir)(directory);
 	let configFiles = [];
 
 	for(const i in workflows) {
 		try {
 			if(fs.existsSync(`${directory}${workflows[i]}/workflow.yml`)) {
-				configFiles.push(yaml.safeLoad(fs.readFileSync(`${directory}${workflows[i]}/workflow.yml`, 'utf8')));
+				configFiles.push(checkWorkflowFile(`${directory}${workflows[i]}/workflow.yml`, yaml.safeLoad(fs.readFileSync(`${directory}${workflows[i]}/workflow.yml`, 'utf8'))));
 			} else {
-				configFiles = configFiles.concat(await analyzeWorkflow(`${directory}${workflows[i]}/`));
+				configFiles = configFiles.concat(await analyzeWorkflows(`${directory}${workflows[i]}/`));
 			}
 		} catch(e) {
 			console.log(e.message);
@@ -62,6 +59,25 @@ async function analyzeWorkflow(directory) {
 	}
 
 	return configFiles;
+}
+
+/**
+ * Check config file workflow.yml
+ * @param name
+ * @param content
+ * @return {*}
+ */
+function checkWorkflowFile(name, content) {
+
+	if(!content.hasOwnProperty('id')) {
+		throw new Error(`'id' missing in ${name}`);
+	}
+
+	if(!content.hasOwnProperty('id')) {
+		throw new Error(`'stages' missing in ${name}`);
+	}
+
+	return content;
 }
 
 /**

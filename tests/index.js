@@ -18,14 +18,14 @@ workflow.register('github-all', {
 		'id': 23
 	}
 });
-
-workflow.register('github-all', {
-	'meta': {
-		'host': 'https://github.com',
-		'action': 'added',
-		'object': 'issue'
-	},
-	'content': {
-		'id': 24
-	}
-});
+//
+// workflow.register('github-all', {
+// 	'meta': {
+// 		'host': 'https://github.com',
+// 		'action': 'added',
+// 		'object': 'issue'
+// 	},
+// 	'content': {
+// 		'id': 24
+// 	}
+// });

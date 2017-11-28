@@ -1,61 +1,82 @@
+const Guid = require('guid');
+
 /**
  * @param config
- * @param data
  * @return {Stage}
  * @constructor
  */
 module.exports = Stage;
 
-function Stage(config, data) {
-	const name = Object.keys(config)[0];
-	this.job = config[name]['job'];
-	this.priority = config[name]['priority'];
-	this.data = JSON.parse(JSON.stringify(data));
-	this.data['workflow'] = {};
-	this.stageOnSuccess = [];
-	this.stageOnFail = [];
+function Stage(config, name) {
+	this.id = Guid.raw();
+	this.name = name;
+	this.job = null;
+	this.stage_data = null;
+	this.on_success = null;
+	this.on_fail = null;
+	this.priority = 1;
 
-	if (config[name]['on_success']) {
-		this.stageOnSuccess.push({
-			'name': config[name]['on_success']['name'] || `${name}_on_success`,
-			'parent': this.job,
-			'child': config[name]['on_success']
-		});
+	if (!config.hasOwnProperty('job')) {
+		throw new Error('This stage has no job')
 	}
 
-	if (config[name]['on_fail']) {
-		this.stageOnFail.push({
-			'name': config[name]['on_fail']['name'] || `${name}_on_fail`,
-			'parent': this.job,
-			'child': config[name]['on_fail']
-		});
-	}
+	this.job = config.job;
 
-	const jobsData = config[name]['data'];
-	if(jobsData && jobsData.length > 0) {
-		for(const i in jobsData) {
-			this.data['workflow'][Object.keys(jobsData[i])[0]] = jobsData[i][Object.keys(jobsData[i])[0]];
+	if (config.hasOwnProperty('data')) {
+		this.stage_data = config.data;
+		const data = {};
+		if (this.stage_data && this.stage_data.length > 0) {
+			for (const i in this.stage_data) {
+				data[Object.keys(this.stage_data[i])[0]] = this.stage_data[i][Object.keys(this.stage_data[i])[0]];
+			}
 		}
+		this.stage_data = data;
 	}
 
-	this.getData = () => {
-		return this.data;
+	if(config.hasOwnProperty('on_success')) {
+		this.on_success = {
+			'parent': this,
+			'child': new Stage(config.on_success, config.on_success.name || `${this.name}-on_success`)
+		};
+	}
+
+	if (config.hasOwnProperty('on_fail')) {
+		this.on_fail = {
+			'parent': this,
+			'child': new Stage(config.on_fail, config.on_fail.name || `${this.name}-on_fail`)
+		};
+	}
+
+	if (config.hasOwnProperty('priority')) {
+		this.priority = config.priority;
+	}
+
+	this.getId = () => {
+		return this.id;
 	};
 
 	this.getJob = () => {
 		return this.job;
 	};
 
-	this.getStageOnFail = () => {
-		return this.stageOnFail;
+	this.getName = () => {
+		return this.name;
 	};
 
-	this.getStageOnSuccess = () => {
-		return this.stageOnSuccess;
+	this.getData = () => {
+		return this.stage_data;
 	};
 
 	this.getPriority = () => {
 		return this.priority;
+	};
+
+	this.getOnSuccess = () => {
+		return this.on_success;
+	};
+
+	this.getOnFail = () => {
+		return this.on_fail;
 	};
 
 	return this;

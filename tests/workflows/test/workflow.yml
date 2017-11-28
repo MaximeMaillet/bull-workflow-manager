@@ -10,6 +10,7 @@ requirements:
 
 stages:
     - issue_added:
+        priority: 2
         job: test
         on_success:
             job: message
@@ -19,9 +20,25 @@ stages:
             job: message
             data:
                 - message: "Bad news"
-
+    - message2:
+        job: message
+        priority: 1
+        data:
+            - message: "Hello world"
     - message:
+        priority: 2
         job: message
         data:
-          - message: "Test data"
-
+            - message: "First message"
+        on_success:
+            job: message
+            data:
+                - message: "Second message"
+            on_success:
+                job: message
+                data:
+                    - message: "Third message"
+                on_success:
+                    job: message
+                    data:
+                        - message: "Last message"

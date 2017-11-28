@@ -1,8 +1,14 @@
 ### Unreleased
 
-[1.0.4] - 
+[1.1.0] -
 
+- Add parent config in stage
+- Format data in job
+- Support for cron
 
+[1.0.4] -
+
+- Support for cron
 
 ### Released
 

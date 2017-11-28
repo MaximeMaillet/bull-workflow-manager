@@ -33,19 +33,11 @@ module.exports.init = (jobsDirectory, config) => {
 	processJobs(jobsDirectory, '');
 
 	queue.on('completed', (job, result) => {
-		result = {
-			'job': result
-		};
-
-		addChildToQueue(job.name, stageOnSuccess, result);
+		addChildToQueue(stageOnSuccess, job, result);
 	});
 
 	queue.on('failed', (job, err) => {
-		err = {
-			'job': err
-		};
-
-		addChildToQueue(job.name, stageOnFail, err);
+		addChildToQueue(stageOnFail, job, err);
 	});
 };
 
@@ -59,12 +51,50 @@ module.exports.getQueueName = () => {
 
 /**
  * Add job to queue
- * @param conf
+ * @param confParent
  * @param data
  */
-module.exports.add = (conf, data) => {
-	addToQueue(conf, data);
+module.exports.processStages = (confParent, data) => {
+	for (const stagePosition in confParent.stages) {
+		const name = Object.keys(confParent.stages[stagePosition])[0];
+		const stageConfig = confParent.stages[stagePosition][name];
+		addStage(new Stage(stageConfig, name), data, null, confParent);
+	}
 };
+
+/**
+ * @param stage
+ * @param data
+ * @param previous
+ * @param confParent
+ */
+function addStage(stage, data, previous, confParent) {
+	console.log(`Stage(${stage.getName()}) :: Add job(${stage.getJob()})`);
+	queue.add(
+		stage.getJob(),
+		{
+			'body': data,
+			'previous': previous,
+			'workflow': {
+				'config': {
+					'name': confParent.name,
+					'description': confParent.description,
+					'id': confParent.id
+				},
+				'stage': {
+					'name': stage.getName()
+				},
+				'data': stage.getData()
+			}
+		},
+		{
+			jobId: stage.getId(),
+			priority: stage.getPriority()
+		}
+	);
+
+	addChildJob(stage, confParent, data);
+}
 
 /**
  * Process all jobs
@@ -89,31 +119,15 @@ function processJobs(dir, prefix) {
 }
 
 /**
- * Create Stage according to conf + add to queue
- * @param conf
- * @param data
- */
-function addToQueue(conf, data) {
-	const stage = new Stage(conf, data);
-	console.log(`Add job : ${stage.getJob()}`);
-	addChildJob(stage);
-	queue.add(stage.getJob(), stage.getData(), {
-		priority: stage.getPriority()
-	});
-}
-
-/**
  * Add child job to queue
- * @param jobName
  * @param stages
+ * @param job
  * @param data
  */
-function addChildToQueue(jobName, stages, data) {
-	const conf = {};
+function addChildToQueue(stages, job, data) {
 	for (const i in stages) {
-		if(stages[i].parent === jobName) {
-			conf[stages[i].name] = stages[i].child;
-			addToQueue(conf, data);
+		if(stages[i].parent.getId() === job.id) {
+			addStage(stages[i].child, stages[i].data, data, stages[i].confParent);
 			stages.splice(i, 1);
 		}
 	}
@@ -121,8 +135,21 @@ function addChildToQueue(jobName, stages, data) {
 
 /**
  * @param stage
+ * @param confParent
+ * @param data
  */
-function addChildJob(stage) {
-	stageOnSuccess = stageOnSuccess.concat(stage.getStageOnSuccess());
-	stageOnFail =	stageOnFail.concat(stage.getStageOnFail());
+function addChildJob(stage, confParent, data) {
+	if(stage.getOnSuccess() !== null) {
+		stageOnSuccess.push(Object.assign(stage.getOnSuccess(), {
+			'data': data,
+			'confParent': confParent
+		}));
+	}
+
+	if(stage.getOnFail() !== null) {
+		stageOnFail.push(Object.assign(stage.getOnFail(), {
+			'data': data,
+			'confParent': confParent
+		}));
+	}
 }
