@@ -4,6 +4,7 @@
 
 - Support for priority
 - Fix concurency jobs with different data
+- Fix prefix on sub jobs name
 
 ### Released
 
