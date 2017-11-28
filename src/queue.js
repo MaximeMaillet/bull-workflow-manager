@@ -81,9 +81,7 @@ function processJobs(dir, prefix) {
 				}
 				else {
 					console.log('Job processed : '+prefix+value.substring(0, value.length - 3));
-					queue.process(prefix+value.substring(0, value.length - 3), function(job) {
-						return require(`${dir}${value}`)(job);
-					});
+					queue.process(prefix+value.substring(0, value.length - 3), require(`${dir}${value}`));
 				}
 			});
 		});
