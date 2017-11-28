@@ -12,10 +12,10 @@ let queue = null;
 /**
  * Initialize main queue + process all jobs
  */
-module.exports.init = (jobsDirectory) => {
+module.exports.init = (jobsDirectory, config) => {
 
-	let redisHost = process.env.REDIS_HOST;
-	let redisPort = process.env.REDIS_PORT;
+	let redisHost = process.env.REDIS_HOST || config['redis_host'];
+	let redisPort = process.env.REDIS_PORT || config['redis_port'];
 
 	if(!redisHost) {
 		console.warn('Missing environnement REDIS_HOST, default used (127.0.0.1)');

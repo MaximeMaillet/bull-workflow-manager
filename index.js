@@ -13,7 +13,7 @@ let jobsDirectory = null;
  */
 module.exports.init = (config) => {
 	readConfiguration(config);
-	queue.init(jobsDirectory);
+	queue.init(jobsDirectory, config);
 };
 
 /**
@@ -24,16 +24,15 @@ module.exports.init = (config) => {
  */
 module.exports.register = async(workflowId, data) => {
 
-	const workflows = await promisify(fs.readdir)(workflowsDirectory);
+	const workflowConfigFiles = await analyzeWorkflow(workflowsDirectory);
 
-	for(const i in workflows) {
+	for(const i in workflowConfigFiles) {
 		try {
-			const doc = yaml.safeLoad(fs.readFileSync(`${workflowsDirectory}${workflows[i]}/workflow.yml`, 'utf8'));
-			if(workflowId === doc.id) {
-				checkRequirements(doc, data);
+			if(workflowId === workflowConfigFiles[i].id) {
+				checkRequirements(workflowConfigFiles[i], data);
 
-				for (const i in doc.stages) {
-					queue.add(doc.stages[i], data);
+				for (const j in workflowConfigFiles[i].stages) {
+					queue.add(workflowConfigFiles[i].stages[j], data);
 				}
 			}
 		} catch(e) {
@@ -41,6 +40,29 @@ module.exports.register = async(workflowId, data) => {
 		}
 	}
 };
+
+/**
+ * @param directory
+ * @returns {Promise.<Array>}
+ */
+async function analyzeWorkflow(directory) {
+	const workflows = await promisify(fs.readdir)(directory);
+	let configFiles = [];
+
+	for(const i in workflows) {
+		try {
+			if(fs.existsSync(`${directory}${workflows[i]}/workflow.yml`)) {
+				configFiles.push(yaml.safeLoad(fs.readFileSync(`${directory}${workflows[i]}/workflow.yml`, 'utf8')));
+			} else {
+				configFiles = configFiles.concat(await analyzeWorkflow(`${directory}${workflows[i]}/`));
+			}
+		} catch(e) {
+			console.log(e.message);
+		}
+	}
+
+	return configFiles;
+}
 
 /**
  * @param doc
