@@ -20,3 +20,8 @@ stages:
             data:
                 - message: "Bad news"
 
+    - message:
+        job: message
+        data:
+          - message: "Test data"
+

@@ -9,6 +9,7 @@ module.exports = Stage;
 function Stage(config, data) {
 	const name = Object.keys(config)[0];
 	this.job = config[name]['job'];
+	this.priority = config[name]['priority'];
 	this.data = data;
 	this.data['workflow'] = {};
 	this.stageOnSuccess = [];
@@ -51,6 +52,10 @@ function Stage(config, data) {
 
 	this.getStageOnSuccess = () => {
 		return this.stageOnSuccess;
+	};
+
+	this.getPriority = () => {
+		return this.priority;
 	};
 
 	return this;

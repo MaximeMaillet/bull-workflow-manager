@@ -96,7 +96,9 @@ function addToQueue(conf, data) {
 	const stage = new Stage(conf, data);
 	console.log('Add job : '+stage.getJob());
 	addChildJob(stage);
-	queue.add(stage.getJob(), stage.getData());
+	queue.add(stage.getJob(), stage.getData(), {
+		'priority': stage.getPriority()
+	});
 }
 
 /**
