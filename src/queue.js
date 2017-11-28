@@ -34,7 +34,7 @@ module.exports.init = (jobsDirectory, config) => {
 
 	queue.on('completed', (job, result) => {
 		result = {
-			"job": result
+			'job': result
 		};
 
 		addChildToQueue(job.name, stageOnSuccess, result);
@@ -42,7 +42,7 @@ module.exports.init = (jobsDirectory, config) => {
 
 	queue.on('failed', (job, err) => {
 		err = {
-			"job": err
+			'job': err
 		};
 
 		addChildToQueue(job.name, stageOnFail, err);
@@ -78,10 +78,10 @@ function processJobs(dir, prefix) {
 				const file = fs.statSync(dir+value);
 
 				if(file.isDirectory()) {
-					processJobs(dir+value+'/', value+'/');
+					processJobs(`${dir}${value}/`, `${prefix}${value}/`);
 				}
 				else {
-					console.log('Job processed : '+prefix+value.substring(0, value.length - 3));
+					console.log(`Job processed : ${prefix}${value.substring(0, value.length - 3)}`);
 					queue.process(prefix+value.substring(0, value.length - 3), require(`${dir}${value}`));
 				}
 			});
@@ -95,11 +95,11 @@ function processJobs(dir, prefix) {
  */
 function addToQueue(conf, data) {
 	const stage = new Stage(conf, data);
-	console.log('Add job : '+stage.getJob());
+	console.log(`Add job : ${stage.getJob()}`);
 	addChildJob(stage);
 	queue.add(stage.getJob(), stage.getData(), {
 		priority: stage.getPriority()
-	})
+	});
 }
 
 /**
