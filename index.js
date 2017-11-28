@@ -81,8 +81,9 @@ function checkRequirements(doc, data) {
 				Object.keys(requirements.data[i]).map((key) => {
 
 					const dataCompare = getDataCompareFromKey(key, data);
+					const typeAcceptedForCompare = ['string', 'number', 'boolean'];
 
-					if(typeof(requirements.data[i][key]) === 'string') {
+					if(typeAcceptedForCompare.indexOf(typeof(requirements.data[i][key])) !== -1) {
 						if(dataCompare !== requirements.data[i][key]) {
 							throw new Error(`[${doc.name}] Requirements not completed : Require ${requirements.data[i][key]} ; Give ${dataCompare}`);
 						}
@@ -90,6 +91,8 @@ function checkRequirements(doc, data) {
 						if(requirements.data[i][key].indexOf(dataCompare) === -1) {
 							throw new Error(`[${doc.name}] Requirements not completed : Require ${requirements.data[i][key]} ; Give ${dataCompare}`);
 						}
+					} else {
+						console.log(`Type not recognized : ${typeof(requirements.data[i][key])}`);
 					}
 
 				});

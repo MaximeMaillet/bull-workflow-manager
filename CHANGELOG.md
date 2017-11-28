@@ -5,6 +5,7 @@
 - Support for priority
 - Fix concurency jobs with different data
 - Fix prefix on sub jobs name
+- Fix requirements for accept number & boolean for compare
 
 ### Released
 
