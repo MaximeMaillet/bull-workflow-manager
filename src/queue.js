@@ -28,6 +28,7 @@ module.exports.init = (jobsDirectory, config) => {
 	}
 
 	queue = new Queue(this.getQueueName(), `redis://${redisHost}:${redisPort}`);
+	queue.empty();
 
 	processJobs(jobsDirectory, '');
 
@@ -97,8 +98,8 @@ function addToQueue(conf, data) {
 	console.log('Add job : '+stage.getJob());
 	addChildJob(stage);
 	queue.add(stage.getJob(), stage.getData(), {
-		'priority': stage.getPriority()
-	});
+		priority: stage.getPriority()
+	})
 }
 
 /**

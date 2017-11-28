@@ -3,6 +3,7 @@
 [1.0.3] -
 
 - Support for priority
+- Fix concurency jobs with different data
 
 ### Released
 

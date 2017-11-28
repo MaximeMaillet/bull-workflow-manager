@@ -10,7 +10,7 @@ function Stage(config, data) {
 	const name = Object.keys(config)[0];
 	this.job = config[name]['job'];
 	this.priority = config[name]['priority'];
-	this.data = data;
+	this.data = JSON.parse(JSON.stringify(data));
 	this.data['workflow'] = {};
 	this.stageOnSuccess = [];
 	this.stageOnFail = [];
@@ -33,7 +33,7 @@ function Stage(config, data) {
 
 	const jobsData = config[name]['data'];
 	if(jobsData && jobsData.length > 0) {
-		for(let i in jobsData) {
+		for(const i in jobsData) {
 			this.data['workflow'][Object.keys(jobsData[i])[0]] = jobsData[i][Object.keys(jobsData[i])[0]];
 		}
 	}
@@ -59,4 +59,4 @@ function Stage(config, data) {
 	};
 
 	return this;
-};
+}
