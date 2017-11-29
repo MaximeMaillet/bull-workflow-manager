@@ -12,6 +12,9 @@ let jobsDirectory = null;
  */
 module.exports.init = (config) => {
 	readConfiguration(config);
+	if(config.hasOwnProperty('parameters')) {
+		initParameters(config.parameters);
+	}
 	return queue.init(jobsDirectory, config);
 };
 
@@ -171,4 +174,8 @@ function readConfiguration(config) {
 	if(jobsDirectory.substr(jobsDirectory.length -1) !== '/') {
 		jobsDirectory = `${jobsDirectory}/`;
 	}
+}
+
+function initParameters(file) {
+	console.log(file);
 }
