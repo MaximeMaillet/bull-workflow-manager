@@ -9,6 +9,12 @@ requirements:
         - meta.action: "added|deleted|updated"
 
 stages:
+    - message_cron:
+        job: message
+        repeat:
+            cron: "*/5 * * * * *"
+        data:
+            - message: "Cron cron cron"
     - issue_added:
         priority: 2
         job: test

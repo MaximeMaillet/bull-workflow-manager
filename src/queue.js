@@ -91,7 +91,8 @@ function addStage(stage, data, previous, confParent) {
 		},
 		{
 			jobId: stage.getId(),
-			priority: stage.getPriority()
+			priority: stage.getPriority(),
+			repeat: stage.getRepeat()
 		}
 	);
 

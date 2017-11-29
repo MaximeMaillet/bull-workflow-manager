@@ -1,3 +1,7 @@
+### To do
+
+- Global parameters file
+
 ### Unreleased
 
 [1.1.0] -
@@ -6,6 +10,7 @@
 - Format data in job
 - Add uniq ID for each stage
 - Support regex for requirements
+- Support for cron
 
 
 ### Released

@@ -15,9 +15,10 @@ function Stage(config, name) {
 	this.on_success = null;
 	this.on_fail = null;
 	this.priority = 1;
+	this.repeat = null;
 
 	if (!config.hasOwnProperty('job')) {
-		throw new Error('This stage has no job')
+		throw new Error('This stage has no job');
 	}
 
 	this.job = config.job;
@@ -51,6 +52,10 @@ function Stage(config, name) {
 		this.priority = config.priority;
 	}
 
+	if(config.hasOwnProperty('repeat')) {
+		this.repeat = config.repeat;
+	}
+
 	this.getId = () => {
 		return this.id;
 	};
@@ -69,6 +74,10 @@ function Stage(config, name) {
 
 	this.getPriority = () => {
 		return this.priority;
+	};
+
+	this.getRepeat = () => {
+		return this.repeat;
 	};
 
 	this.getOnSuccess = () => {
