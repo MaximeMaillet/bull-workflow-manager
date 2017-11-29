@@ -1,6 +1,11 @@
 ### Unreleased
 
-[1.1.0] -
+[1.1.1] - 
+
+
+### Released
+
+[1.1.0] - 2017-11-29
 
 - Add parent config in stage
 - Format data in job
@@ -8,9 +13,6 @@
 - Support regex for requirements
 - Support for cron
 - Global parameters file
-
-
-### Released
 
 [1.0.3] - 2017-11-28
 
