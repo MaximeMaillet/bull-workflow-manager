@@ -1,7 +1,6 @@
 require('dotenv').config();
 
 const yaml = require('js-yaml');
-const {promisify} = require('util');
 const fs = require('fs');
 const queue = require('./src/queue');
 
@@ -13,7 +12,7 @@ let jobsDirectory = null;
  */
 module.exports.init = (config) => {
 	readConfiguration(config);
-	queue.init(jobsDirectory, config);
+	return queue.init(jobsDirectory, config);
 };
 
 /**
@@ -24,7 +23,7 @@ module.exports.init = (config) => {
  */
 module.exports.register = async(workflowId, data) => {
 
-	const workflowConfigFiles = await analyzeWorkflows(workflowsDirectory);
+	const workflowConfigFiles = analyzeWorkflows(workflowsDirectory);
 
 	for(const i in workflowConfigFiles) {
 		try {
@@ -42,8 +41,8 @@ module.exports.register = async(workflowId, data) => {
  * @param directory
  * @returns {Promise.<Array>}
  */
-async function analyzeWorkflows(directory) {
-	const workflows = await promisify(fs.readdir)(directory);
+function analyzeWorkflows(directory) {
+	const workflows = fs.readdirSync(directory);
 	let configFiles = [];
 
 	for(const i in workflows) {
@@ -51,7 +50,7 @@ async function analyzeWorkflows(directory) {
 			if(fs.existsSync(`${directory}${workflows[i]}/workflow.yml`)) {
 				configFiles.push(checkWorkflowFile(`${directory}${workflows[i]}/workflow.yml`, yaml.safeLoad(fs.readFileSync(`${directory}${workflows[i]}/workflow.yml`, 'utf8'))));
 			} else {
-				configFiles = configFiles.concat(await analyzeWorkflows(`${directory}${workflows[i]}/`));
+				configFiles = configFiles.concat(analyzeWorkflows(`${directory}${workflows[i]}/`));
 			}
 		} catch(e) {
 			console.log(e.message);
@@ -85,32 +84,22 @@ function checkWorkflowFile(name, content) {
  * @param data
  */
 function checkRequirements(doc, data) {
-	const requirements = doc.requirements;
+	const {requirements} = doc;
 
 	if(!requirements) {
 		return true;
 	}
-
 	if(requirements.data) {
 		for(const i in requirements.data) {
 			if(data) {
 				Object.keys(requirements.data[i]).map((key) => {
-
 					const dataCompare = getDataCompareFromKey(key, data);
-					const typeAcceptedForCompare = ['string', 'number', 'boolean'];
+					const dataRequirements = requirements.data[i][key];
+					const regex = new RegExp(dataRequirements);
 
-					if(typeAcceptedForCompare.indexOf(typeof(requirements.data[i][key])) !== -1) {
-						if(dataCompare !== requirements.data[i][key]) {
-							throw new Error(`[${doc.name}] Requirements not completed : Require ${requirements.data[i][key]} ; Give ${dataCompare}`);
-						}
-					} else if(Array.isArray(requirements.data[i][key])) {
-						if(requirements.data[i][key].indexOf(dataCompare) === -1) {
-							throw new Error(`[${doc.name}] Requirements not completed : Require ${requirements.data[i][key]} ; Give ${dataCompare}`);
-						}
-					} else {
-						console.log(`Type not recognized : ${typeof(requirements.data[i][key])}`);
+					if(!regex.test(dataCompare)) {
+						throw new Error(`[${doc.name}] Requirements not completed : Require ${dataRequirements} ; Give ${dataCompare}`);
 					}
-
 				});
 			} else {
 				throw new Error(`[${doc.name}] Requirements not completed : no data given`);
@@ -135,9 +124,15 @@ function getDataCompareFromKey(key, data) {
 				dataCompare = dataCompare[arrayKeys[j]];
 			}
 		}
+
+		if(typeof(dataCompare) === 'object') {
+			throw new Error(`Data has no property ${key}`);
+		}
 	} else {
 		if(dataCompare.hasOwnProperty(key)) {
 			dataCompare = dataCompare[key];
+		} else {
+			throw new Error(`Data has no property ${key}`);
 		}
 	}
 

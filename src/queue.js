@@ -39,6 +39,8 @@ module.exports.init = (jobsDirectory, config) => {
 	queue.on('failed', (job, err) => {
 		addChildToQueue(stageOnFail, job, err);
 	});
+
+	return queue;
 };
 
 /**

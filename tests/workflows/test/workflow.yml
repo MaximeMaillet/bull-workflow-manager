@@ -5,8 +5,8 @@ id: github-all
 requirements:
     data:
         - meta.host: "https://github.com"
-        - meta.object: "issue"
-        - meta.action: "added"
+        - meta.object: "^((?!(issues)).)*$"
+        - meta.action: "added|deleted|updated"
 
 stages:
     - issue_added:

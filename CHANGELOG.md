@@ -4,11 +4,9 @@
 
 - Add parent config in stage
 - Format data in job
-- Support for cron
+- Add uniq ID for each stage
+- Support regex for requirements
 
-[1.0.4] -
-
-- Support for cron
 
 ### Released
 
