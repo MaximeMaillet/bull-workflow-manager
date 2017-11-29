@@ -56,11 +56,26 @@ module.exports.getQueueName = () => {
  * @param confParent
  * @param data
  */
-module.exports.processStages = (confParent, data) => {
+module.exports.processStages = (confParent) => {
+	const stages = [];
 	for (const stagePosition in confParent.stages) {
 		const name = Object.keys(confParent.stages[stagePosition])[0];
 		const stageConfig = confParent.stages[stagePosition][name];
-		addStage(new Stage(stageConfig, name), data, null, confParent);
+		stages.push(new Stage(stageConfig, name));
+		// addStage(new Stage(stageConfig, name), data, null, confParent);
+	}
+	return stages;
+};
+
+/**
+ * Add all stage for one workflow
+ * @param stages
+ * @param data
+ * @param confParent
+ */
+module.exports.addStages = (stages, data, confParent) => {
+	for(const i in stages) {
+		addStage(stages[i], data, null, confParent);
 	}
 };
 

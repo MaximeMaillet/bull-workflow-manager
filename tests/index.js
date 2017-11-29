@@ -1,13 +1,14 @@
 const workflow = require('../index');
 
-const config = {};
-config['workflows_directory'] = `${__dirname}/workflows/`;
-config['jobs_directory'] = `${__dirname}/jobs/`;
-config['redis_host'] = '127.0.0.1';
-config['redis_port'] = 6379;
-config['parameters'] = `${__dirname}/parameters.yml`;
+const config = {
+	'redis_host': '127.0.0.1',
+	'redis_port': 6379,
+	'parameters': `${__dirname}/parameters.yml`,
+	'workflows_directory': `${__dirname}/workflows/`,
+	'jobs_directory': `${__dirname}/jobs/`,
+};
 
-const queue = workflow.init(config);
+workflow.init(config);
 
 workflow.register('github-all', {
 	'meta': {

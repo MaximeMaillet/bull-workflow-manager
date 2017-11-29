@@ -14,7 +14,7 @@ stages:
         repeat:
             cron: "*/5 * * * * *"
         data:
-            - message: "Cron cron cron"
+            - message: "%global_message%"
     - issue_added:
         priority: 2
         job: test

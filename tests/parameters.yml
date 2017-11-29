@@ -1,0 +1,13 @@
+parameters:
+  global_message: '%env(COCO)%'
+  coucou: bonjour
+  arr:
+    - coucou
+    - coucou
+  bijour:
+    dkdk: clc
+    dkdd: true
+  bool: true
+  nmb: 1
+  env: '%env(COCO)%'
+  env_nuts: '%env(COCONUTS)%'

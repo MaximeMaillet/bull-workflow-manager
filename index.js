@@ -6,6 +6,8 @@ const queue = require('./src/queue');
 
 let workflowsDirectory = null;
 let jobsDirectory = null;
+let globalParameters = null;
+const workflows = {};
 
 /**
  * Init
@@ -15,6 +17,16 @@ module.exports.init = (config) => {
 	if(config.hasOwnProperty('parameters')) {
 		initParameters(config.parameters);
 	}
+
+	const workflowConfigFiles = analyzeWorkflows(workflowsDirectory);
+	for(const i in workflowConfigFiles) {
+		workflows[workflowConfigFiles[i].id] = {
+			workflow: workflowConfigFiles[i],
+			stages: queue.processStages(workflowConfigFiles[i])
+		};
+		replaceContentWithGlobalParameters(workflows[workflowConfigFiles[i].id].stages);
+	}
+
 	return queue.init(jobsDirectory, config);
 };
 
@@ -26,18 +38,16 @@ module.exports.init = (config) => {
  */
 module.exports.register = async(workflowId, data) => {
 
-	const workflowConfigFiles = analyzeWorkflows(workflowsDirectory);
-
-	for(const i in workflowConfigFiles) {
+	Object.keys(workflows).map((value) => {
 		try {
-			if(workflowId === workflowConfigFiles[i].id) {
-				checkRequirements(workflowConfigFiles[i], data);
-				queue.processStages(workflowConfigFiles[i], data);
+			if(workflowId === value) {
+				checkRequirements(workflows[value]['workflow'], data);
+				queue.addStages(workflows[value]['stages'], data, workflows[value]['workflow']);
 			}
 		} catch(e) {
 			console.log(e.message);
 		}
-	}
+	});
 };
 
 /**
@@ -51,7 +61,7 @@ function analyzeWorkflows(directory) {
 	for(const i in workflows) {
 		try {
 			if(fs.existsSync(`${directory}${workflows[i]}/workflow.yml`)) {
-				configFiles.push(checkWorkflowFile(`${directory}${workflows[i]}/workflow.yml`, yaml.safeLoad(fs.readFileSync(`${directory}${workflows[i]}/workflow.yml`, 'utf8'))));
+				configFiles.push(getContentWorkflowFile(`${directory}${workflows[i]}/workflow.yml`));
 			} else {
 				configFiles = configFiles.concat(analyzeWorkflows(`${directory}${workflows[i]}/`));
 			}
@@ -61,6 +71,16 @@ function analyzeWorkflows(directory) {
 	}
 
 	return configFiles;
+}
+
+/**
+ * @param file
+ * @returns {*}
+ */
+function getContentWorkflowFile(file) {
+	const content = yaml.safeLoad(fs.readFileSync(file, 'utf8'));
+	checkWorkflowFile(file, content);
+	return content;
 }
 
 /**
@@ -176,6 +196,59 @@ function readConfiguration(config) {
 	}
 }
 
+/**
+ * Initialize parameters file
+ * @param file
+ */
 function initParameters(file) {
-	console.log(file);
+	if(!fs.existsSync(file)) {
+		console.log(`${file} not found`);
+	} else {
+		globalParameters = yaml.safeLoad(fs.readFileSync(file, 'utf8'))['parameters'];
+		const regex = /^%env\(([a-zA-Z0-9-_]+)\)%$/;
+
+		Object.keys(globalParameters).map((value) => {
+			if(typeof(globalParameters[value]) === 'string' && regex.test(globalParameters[value])) {
+				globalParameters[value] = process.env[globalParameters[value].replace(regex, '$1')];
+			}
+		});
+	}
+}
+
+function replaceContentWithGlobalParameters(stages) {
+
+	let stage = null;
+	const reg = /^%([a-zA-Z0-9-_]+)%$/;
+
+	for(const i in stages) {
+		stage = stages[i];
+		if(stage.getData() !== null) {
+			Object.keys(stage.getData()).map((value) => {
+				const data = stage.getData()[value];
+				if(reg.test(data)) {
+					stage.getData()[value] = globalParameters[data.replace(reg, '$1')];
+				}
+			});
+		}
+	}
+
+	// for(const i in workflowContent.stages) {
+	// 	stage = workflowContent.stages[i][Object.keys(workflowContent.stages[i])[0]];
+	//
+	//
+	// 	if(stage.hasOwnProperty('on_success')) {
+	//
+	// 	}
+	//
+	// 	if(stage.hasOwnProperty('on_fail')) {
+	//
+	// 	}
+	// }
+	//
+	// Object.keys(globalParameters).map((param) => {
+	// 	// console.log(param);
+	// });
+
+
+	// throw new Error('coucouc');
 }

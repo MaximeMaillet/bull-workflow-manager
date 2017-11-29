@@ -1,7 +1,3 @@
-### To do
-
-- Global parameters file
-
 ### Unreleased
 
 [1.1.0] -
@@ -11,6 +7,7 @@
 - Add uniq ID for each stage
 - Support regex for requirements
 - Support for cron
+- Global parameters file
 
 
 ### Released
