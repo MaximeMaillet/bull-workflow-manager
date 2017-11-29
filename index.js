@@ -3,6 +3,7 @@ require('dotenv').config();
 const yaml = require('js-yaml');
 const fs = require('fs');
 const queue = require('./src/queue');
+const Guid = require('guid');
 
 let workflowsDirectory = null;
 let jobsDirectory = null;
@@ -14,17 +15,19 @@ const workflows = {};
  */
 module.exports.init = (config) => {
 	readConfiguration(config);
-	if(config.hasOwnProperty('parameters')) {
+	if(config && config.hasOwnProperty('parameters')) {
 		initParameters(config.parameters);
 	}
 
 	const workflowConfigFiles = analyzeWorkflows(workflowsDirectory);
 	for(const i in workflowConfigFiles) {
-		workflows[workflowConfigFiles[i].id] = {
+		const id = Guid.raw();
+		workflows[id] = {
+			id: id,
 			workflow: workflowConfigFiles[i],
 			stages: queue.processStages(workflowConfigFiles[i])
 		};
-		replaceContentWithGlobalParameters(workflows[workflowConfigFiles[i].id].stages);
+		replaceContentWithGlobalParameters(workflows[id].stages);
 	}
 
 	return queue.init(jobsDirectory, config);
@@ -37,10 +40,9 @@ module.exports.init = (config) => {
  * @param data
  */
 module.exports.register = async(workflowId, data) => {
-
 	Object.keys(workflows).map((value) => {
 		try {
-			if(workflowId === value) {
+			if(workflowId === workflows[value]['workflow']['id']) {
 				checkRequirements(workflows[value]['workflow'], data);
 				queue.addStages(workflows[value]['stages'], data, workflows[value]['workflow']);
 			}
@@ -80,6 +82,7 @@ function analyzeWorkflows(directory) {
 function getContentWorkflowFile(file) {
 	const content = yaml.safeLoad(fs.readFileSync(file, 'utf8'));
 	checkWorkflowFile(file, content);
+	console.log(`Workflow added ${content.name} (${content.id})`);
 	return content;
 }
 
@@ -207,11 +210,13 @@ function initParameters(file) {
 		globalParameters = yaml.safeLoad(fs.readFileSync(file, 'utf8'))['parameters'];
 		const regex = /^%env\(([a-zA-Z0-9-_]+)\)%$/;
 
-		Object.keys(globalParameters).map((value) => {
-			if(typeof(globalParameters[value]) === 'string' && regex.test(globalParameters[value])) {
-				globalParameters[value] = process.env[globalParameters[value].replace(regex, '$1')];
-			}
-		});
+		if(globalParameters) {
+			Object.keys(globalParameters).map((value) => {
+				if(typeof(globalParameters[value]) === 'string' && regex.test(globalParameters[value])) {
+					globalParameters[value] = process.env[globalParameters[value].replace(regex, '$1')];
+				}
+			});
+		}
 	}
 }
 
