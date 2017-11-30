@@ -4,6 +4,7 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const queue = require('./src/queue');
 const Guid = require('guid');
+const _get = require('lodash.get');
 
 let workflowsDirectory = null;
 let jobsDirectory = null;
@@ -118,12 +119,12 @@ function checkRequirements(doc, data) {
 			for(const i in requirements.data) {
 				if(data) {
 					Object.keys(requirements.data[i]).map((key) => {
-						const dataCompare = getDataCompareFromKey(key, data);
 						const dataRequirements = requirements.data[i][key];
-						const regex = new RegExp(dataRequirements);
+						const dataCompare = _get(data, key);
+						const regex = new RegExp(formatRegex(dataRequirements, data));
 
 						if(!regex.test(dataCompare)) {
-							throw new Error(`Requirements not completed : Require ${dataRequirements} ; Give ${dataCompare}`);
+							throw new Error(`Requirements not completed : Require ${regex} ; Give ${dataCompare}`);
 						}
 					});
 				} else {
@@ -224,8 +225,10 @@ function initParameters(config) {
 	}
 }
 
+/**
+ * @param stages
+ */
 function replaceContentWithGlobalParameters(stages) {
-
 	let stage = null;
 	const reg = /^%([a-zA-Z0-9-_]+)%$/;
 
@@ -233,10 +236,7 @@ function replaceContentWithGlobalParameters(stages) {
 		stage = stages[i];
 		if(stage.getData() !== null) {
 			Object.keys(stage.getData()).map((value) => {
-				const data = stage.getData()[value];
-				if(reg.test(data)) {
-					stage.getData()[value] = globalParameters[data.replace(reg, '$1')];
-				}
+				stage.getData()[value] = replaceDataWithParameters(stage.getData()[value], globalParameters);
 			});
 		}
 	}
@@ -260,4 +260,30 @@ function replaceContentWithGlobalParameters(stages) {
 
 
 	// throw new Error('coucouc');
+}
+
+/**
+ * @param regex
+ * @param parameters
+ * @returns {*}
+ */
+function formatRegex(regex, parameters) {
+	const reg = /(.*)%([a-zA-Z0-9-_.]+)%(.*)/;
+	if(reg.test(regex)) {
+		return regex.replace(reg, `$1${_get(parameters, regex.replace(reg, '$2'))}$3`);
+	}
+	return regex;
+}
+
+/**
+ * @param data
+ * @param parameters
+ * @returns {*}
+ */
+function replaceDataWithParameters(data, parameters) {
+	const reg = /^%([a-zA-Z0-9-_]+)%$/;
+	if(reg.test(data)) {
+		return data.replace(reg, _get(parameters, data.replace(reg, '$1')));
+	}
+	return data;
 }
