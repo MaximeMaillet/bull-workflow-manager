@@ -15,9 +15,7 @@ const workflows = {};
  */
 module.exports.init = (config) => {
 	readConfiguration(config);
-	if(config && config.hasOwnProperty('parameters')) {
-		initParameters(config.parameters);
-	}
+	initParameters(config);
 
 	const workflowConfigFiles = analyzeWorkflows(workflowsDirectory);
 	for(const i in workflowConfigFiles) {
@@ -201,10 +199,12 @@ function readConfiguration(config) {
 
 /**
  * Initialize parameters file
- * @param file
+ * @param config
  */
-function initParameters(file) {
-	if(!fs.existsSync(file)) {
+function initParameters(config) {
+	const file = config.parameters || process.env.PARAMETERS || null;
+
+	if(!file || !fs.existsSync(file)) {
 		console.log(`${file} not found`);
 	} else {
 		globalParameters = yaml.safeLoad(fs.readFileSync(file, 'utf8'))['parameters'];

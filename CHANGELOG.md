@@ -1,7 +1,12 @@
+### To do
+
+- Replace sub-stages data by global parameters
+
 ### Unreleased
 
 [1.1.1] - 
 
+- Support parameters as env
 
 ### Released
 
