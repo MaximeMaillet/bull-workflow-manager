@@ -86,7 +86,7 @@ module.exports.addStages = (stages, data, confParent) => {
  * @param confParent
  */
 function addStage(stage, data, previous, confParent) {
-	console.log(`Stage(${stage.getName()}) :: Add job(${stage.getJob()})`);
+	console.log(`[${confParent.name}] Stage(${stage.getName()}) :: Add job(${stage.getJob()})`);
 	queue.add(
 		stage.getJob(),
 		{
