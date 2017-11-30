@@ -114,20 +114,24 @@ function checkRequirements(doc, data) {
 		return true;
 	}
 	if(requirements.data) {
-		for(const i in requirements.data) {
-			if(data) {
-				Object.keys(requirements.data[i]).map((key) => {
-					const dataCompare = getDataCompareFromKey(key, data);
-					const dataRequirements = requirements.data[i][key];
-					const regex = new RegExp(dataRequirements);
+		try {
+			for(const i in requirements.data) {
+				if(data) {
+					Object.keys(requirements.data[i]).map((key) => {
+						const dataCompare = getDataCompareFromKey(key, data);
+						const dataRequirements = requirements.data[i][key];
+						const regex = new RegExp(dataRequirements);
 
-					if(!regex.test(dataCompare)) {
-						throw new Error(`[${doc.name}] Requirements not completed : Require ${dataRequirements} ; Give ${dataCompare}`);
-					}
-				});
-			} else {
-				throw new Error(`[${doc.name}] Requirements not completed : no data given`);
+						if(!regex.test(dataCompare)) {
+							throw new Error(`Requirements not completed : Require ${dataRequirements} ; Give ${dataCompare}`);
+						}
+					});
+				} else {
+					throw new Error('Requirements not completed : no data given');
+				}
 			}
+		} catch(e) {
+			throw new Error(`[${doc.name}] ${e.message}`);
 		}
 	}
 }
@@ -144,7 +148,7 @@ function getDataCompareFromKey(key, data) {
 	if(key.indexOf('.') !== -1) {
 		const arrayKeys = key.split('.');
 		for(const j in arrayKeys) {
-			if(dataCompare.hasOwnProperty(arrayKeys[j])) {
+			if(dataCompare && dataCompare.hasOwnProperty(arrayKeys[j])) {
 				dataCompare = dataCompare[arrayKeys[j]];
 			}
 		}
@@ -153,7 +157,7 @@ function getDataCompareFromKey(key, data) {
 			throw new Error(`Data has no property ${key}`);
 		}
 	} else {
-		if(dataCompare.hasOwnProperty(key)) {
+		if(dataCompare && dataCompare.hasOwnProperty(key)) {
 			dataCompare = dataCompare[key];
 		} else {
 			throw new Error(`Data has no property ${key}`);
