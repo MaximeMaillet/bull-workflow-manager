@@ -9,42 +9,44 @@ requirements:
         - meta.action: "added|deleted|updated"
 
 stages:
-    - message_cron:
+  - first:
+      job: message
+      data:
+        - message: 'first'
+      on_success:
         job: message
-        repeat:
-            cron: "*/5 * * * * *"
         data:
-            - message: "%global_message%"
-    - issue_added:
-        priority: 2
-        job: test
+          - message: 'f_on1'
         on_success:
-            job: message
-            data:
-                - message: "Good news"
-        on_fail:
-            job: message
-            data:
-                - message: "Bad news"
-    - message2:
-        job: message
-        priority: 1
-        data:
-            - message: "Hello world"
-    - message:
-        priority: 2
+          job: message
+          data:
+            - message: 'f_on2'
+  - second:
+      job: message
+      data:
+        - message: 'seocnd'
+      on_success:
         job: message
         data:
-            - message: "First message"
+          - message: 's_on1'
         on_success:
-            job: message
-            data:
-                - message: "Second message"
-            on_success:
-                job: message
-                data:
-                    - message: "Third message"
-                on_success:
-                    job: message
-                    data:
-                        - message: "Last message"
+          job: message
+          data:
+            - message: 's_on2'
+  - message_cron:
+      job: message
+      repeat:
+        cron: "*/5 * * * * *"
+      data:
+        - message: "CRON CRON"
+  - issue_added:
+      priority: 2
+      job: test
+      on_success:
+        job: message
+        data:
+          - message: "Good news"
+      on_fail:
+        job: message
+        data:
+          - message: "Bad news"

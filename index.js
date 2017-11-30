@@ -28,7 +28,7 @@ module.exports.init = (config) => {
 		replaceContentWithGlobalParameters(workflows[id].stages);
 	}
 
-	return queue.init(jobsDirectory, config);
+	queue.init(jobsDirectory, config);
 };
 
 /**

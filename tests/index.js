@@ -10,24 +10,26 @@ const config = {
 
 workflow.init(config);
 
-workflow.register('github-all', {
-	'meta': {
-		'host': 'https://github.com',
-		'action': ' added',
-		'object': 'issue'
-	},
-	'content': {
-		'id': 23
-	}
-});
+for(let i=0; i<10; i++) {
+	workflow.register('github-all', {
+		'meta': {
+			'host': 'https://github.com',
+			'action': ' added',
+			'object': 'issue'
+		},
+		'content': {
+			'id': 23
+		}
+	});
 
-workflow.register('github-all', {
-	'meta': {
-		'host': 'https://github.com',
-		'action': 'added',
-		'object': 'issue'
-	},
-	'content': {
-		'id': 24
-	}
-});
+	workflow.register('github-all', {
+		'meta': {
+			'host': 'https://github.com',
+			'action': 'added',
+			'object': 'issue'
+		},
+		'content': {
+			'id': 24
+		}
+	});
+}

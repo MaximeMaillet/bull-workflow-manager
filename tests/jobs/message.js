@@ -9,6 +9,10 @@ module.exports = async(job) => {
 		}
 	} = job.data;
 
-	console.log(`${wfData.message} from ${previous}`);
+	setTimeout(() => {
+			console.log(`${wfData.message} from ${previous}`);
+		},
+		500);
+
 	return wfData.message;
 };
