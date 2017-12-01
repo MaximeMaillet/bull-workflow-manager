@@ -1,0 +1,52 @@
+name: IssueAdded
+description: "When issue is added"
+id: github-all
+
+requirements:
+    data:
+        - meta.host: "https://github.com"
+        - meta.object: "^((?!(issues)).)*$"
+        - meta.action: "added|deleted|updated"
+
+stages:
+  - first:
+      job: message
+      data:
+        - message: 'first'
+      on_success:
+        job: message
+        data:
+          - message: 'f_on1'
+        on_success:
+          job: message
+          data:
+            - message: 'f_on2'
+  - second:
+      job: message
+      data:
+        - message: 'seocnd'
+      on_success:
+        job: message
+        data:
+          - message: 's_on1'
+        on_success:
+          job: message
+          data:
+            - message: 's_on2'
+  - message_cron:
+      job: message
+      repeat:
+        cron: "*/5 * * * * *"
+      data:
+        - message: "CRON CRON"
+  - issue_added:
+      priority: 2
+      job: test
+      on_success:
+        job: message
+        data:
+          - message: "Good news"
+      on_fail:
+        job: message
+        data:
+          - message: "Bad news"

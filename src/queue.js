@@ -86,7 +86,7 @@ module.exports.addStages = (stages, data, confParent) => {
  * @param confParent
  */
 function addStage(stage, data, previous, confParent) {
-	console.log(`Stage(${stage.getName()}) :: Add job(${stage.getJob()})`);
+	console.log(`[${confParent.name}] Stage(${stage.getName()}) :: Add job(${stage.getJob()})`);
 	queue.add(
 		stage.getJob(),
 		{
@@ -105,7 +105,7 @@ function addStage(stage, data, previous, confParent) {
 			}
 		},
 		{
-			jobId: stage.getId(),
+			stageId: stage.getId(),
 			priority: stage.getPriority(),
 			repeat: stage.getRepeat()
 		}
@@ -144,7 +144,7 @@ function processJobs(dir, prefix) {
  */
 function addChildToQueue(stages, job, data) {
 	for (const i in stages) {
-		if(stages[i].parent.getId() === job.id) {
+		if(job.opts.stageId && stages[i].parent.getId() === job.opts.stageId) {
 			addStage(stages[i].child, stages[i].data, data, stages[i].confParent);
 			stages.splice(i, 1);
 		}

@@ -8,6 +8,7 @@
 [1.1.1] - 
 
 - Support parameters as env
+- Fix bug no repeat job
 
 ### Released
 

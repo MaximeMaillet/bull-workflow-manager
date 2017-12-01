@@ -4,6 +4,7 @@ const yaml = require('js-yaml');
 const fs = require('fs');
 const queue = require('./src/queue');
 const Guid = require('guid');
+const _get = require('lodash.get');
 
 let workflowsDirectory = null;
 let jobsDirectory = null;
@@ -28,7 +29,7 @@ module.exports.init = (config) => {
 		replaceContentWithGlobalParameters(workflows[id].stages);
 	}
 
-	return queue.init(jobsDirectory, config);
+	queue.init(jobsDirectory, config);
 };
 
 /**
@@ -114,20 +115,28 @@ function checkRequirements(doc, data) {
 		return true;
 	}
 	if(requirements.data) {
-		for(const i in requirements.data) {
-			if(data) {
-				Object.keys(requirements.data[i]).map((key) => {
-					const dataCompare = getDataCompareFromKey(key, data);
-					const dataRequirements = requirements.data[i][key];
-					const regex = new RegExp(dataRequirements);
+		try {
+			for(const i in requirements.data) {
+				if(data) {
+					Object.keys(requirements.data[i]).map((key) => {
+						const dataRequirements = requirements.data[i][key];
+						const dataCompare = _get(data, key);
+						const regex = new RegExp(formatRegex(dataRequirements, data));
 
-					if(!regex.test(dataCompare)) {
-						throw new Error(`[${doc.name}] Requirements not completed : Require ${dataRequirements} ; Give ${dataCompare}`);
-					}
-				});
-			} else {
-				throw new Error(`[${doc.name}] Requirements not completed : no data given`);
+						if(!dataCompare) {
+							throw new Error(`Requirements not completed : no data given for ${key}`);
+						}
+
+						if(!regex.test(dataCompare)) {
+							throw new Error(`Requirements not completed : Require ${regex} ; Give ${dataCompare}`);
+						}
+					});
+				} else {
+					throw new Error('Requirements not completed : no data given');
+				}
 			}
+		} catch(e) {
+			throw new Error(`[${doc.name}] ${e.message}`);
 		}
 	}
 }
@@ -144,7 +153,7 @@ function getDataCompareFromKey(key, data) {
 	if(key.indexOf('.') !== -1) {
 		const arrayKeys = key.split('.');
 		for(const j in arrayKeys) {
-			if(dataCompare.hasOwnProperty(arrayKeys[j])) {
+			if(dataCompare && dataCompare.hasOwnProperty(arrayKeys[j])) {
 				dataCompare = dataCompare[arrayKeys[j]];
 			}
 		}
@@ -153,7 +162,7 @@ function getDataCompareFromKey(key, data) {
 			throw new Error(`Data has no property ${key}`);
 		}
 	} else {
-		if(dataCompare.hasOwnProperty(key)) {
+		if(dataCompare && dataCompare.hasOwnProperty(key)) {
 			dataCompare = dataCompare[key];
 		} else {
 			throw new Error(`Data has no property ${key}`);
@@ -220,8 +229,10 @@ function initParameters(config) {
 	}
 }
 
+/**
+ * @param stages
+ */
 function replaceContentWithGlobalParameters(stages) {
-
 	let stage = null;
 	const reg = /^%([a-zA-Z0-9-_]+)%$/;
 
@@ -229,10 +240,7 @@ function replaceContentWithGlobalParameters(stages) {
 		stage = stages[i];
 		if(stage.getData() !== null) {
 			Object.keys(stage.getData()).map((value) => {
-				const data = stage.getData()[value];
-				if(reg.test(data)) {
-					stage.getData()[value] = globalParameters[data.replace(reg, '$1')];
-				}
+				stage.getData()[value] = replaceDataWithParameters(stage.getData()[value], globalParameters);
 			});
 		}
 	}
@@ -256,4 +264,30 @@ function replaceContentWithGlobalParameters(stages) {
 
 
 	// throw new Error('coucouc');
+}
+
+/**
+ * @param regex
+ * @param parameters
+ * @returns {*}
+ */
+function formatRegex(regex, parameters) {
+	const reg = /(.*)%([a-zA-Z0-9-_.]+)%(.*)/;
+	if(reg.test(regex)) {
+		return regex.replace(reg, `$1${_get(parameters, regex.replace(reg, '$2'))}$3`);
+	}
+	return regex;
+}
+
+/**
+ * @param data
+ * @param parameters
+ * @returns {*}
+ */
+function replaceDataWithParameters(data, parameters) {
+	const reg = /^%([a-zA-Z0-9-_]+)%$/;
+	if(reg.test(data)) {
+		return data.replace(reg, _get(parameters, data.replace(reg, '$1')));
+	}
+	return data;
 }
