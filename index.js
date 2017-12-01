@@ -123,6 +123,10 @@ function checkRequirements(doc, data) {
 						const dataCompare = _get(data, key);
 						const regex = new RegExp(formatRegex(dataRequirements, data));
 
+						if(!dataCompare) {
+							throw new Error(`Requirements not completed : no data given for ${key}`);
+						}
+
 						if(!regex.test(dataCompare)) {
 							throw new Error(`Requirements not completed : Require ${regex} ; Give ${dataCompare}`);
 						}
