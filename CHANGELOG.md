@@ -1,5 +1,6 @@
 ### To do
 
+- launch workflow as manual, automatic (for launch cron as back)
 - Replace sub-stages data by global parameters
 - add method to requirements
     - is_different
