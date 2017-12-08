@@ -1,6 +1,9 @@
 ### To do
 
 - Replace sub-stages data by global parameters
+- add method to requirements
+    - is_different
+    - stack of (OR)
 
 ### Unreleased
 
