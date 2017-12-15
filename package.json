@@ -1,6 +1,6 @@
 {
   "name": "bull-workflow-manager",
-  "version": "0.0.1",
+  "version": "0.0.2",
   "description": "",
   "main": "index.js",
   "scripts": {
@@ -8,14 +8,14 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/MaximeMaillet/workflow-manager.git"
+    "url": "https://gitlab.deuxmax.fr/worfklow/bull-workflow-manager.git"
   },
   "author": "2max <maxime.maillet93@gmail.com>",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/MaximeMaillet/workflow-manager/issues"
+    "url": "https://gitlab.deuxmax.fr/worfklow/bull-workflow-manager/issues"
   },
-  "homepage": "https://github.com/MaximeMaillet/workflow-manager#readme",
+  "homepage": "https://gitlab.deuxmax.fr/worfklow/bull-workflow-manager#readme",
   "dependencies": {
     "bull": "^3.3.6",
     "dotenv": "^4.0.0",
