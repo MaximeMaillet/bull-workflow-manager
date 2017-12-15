@@ -2,6 +2,7 @@
 ## Créer un workflow
 
 - Ajouter la configuration
+
 ```yaml
 #Name random
 name: "My Flow"
