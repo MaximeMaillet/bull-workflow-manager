@@ -2,6 +2,7 @@ require('dotenv').config();
 
 const yaml = require('js-yaml');
 const fs = require('fs');
+const path = require('path');
 const queue = require('./src/queue');
 const Guid = require('guid');
 const _get = require('lodash.get');
@@ -14,22 +15,38 @@ const workflows = {};
 /**
  * Init
  */
-module.exports.init = (config) => {
-	readConfiguration(config);
-	initParameters(config);
+module.exports.init = (_config) => {
+	initialize(_config);
+};
 
-	const workflowConfigFiles = analyzeWorkflows(workflowsDirectory);
-	for(const i in workflowConfigFiles) {
-		const id = Guid.raw();
-		workflows[id] = {
-			id: id,
-			workflow: workflowConfigFiles[i],
-			stages: queue.processStages(workflowConfigFiles[i])
-		};
-		replaceContentWithGlobalParameters(workflows[id].stages);
+module.exports.addDependencies = (dependancies) => {
+	try {
+		const stat = fs.statSync(dependancies);
+		if(stat.isDirectory()) {
+			const statParameters = fs.statSync(`${dependancies}/parameters.yml`);
+			if(statParameters.isFile()) {
+				initParameters({
+					parameters: `${dependancies}/parameters.yml`
+				});
+			}
+
+			const statWorkflows = fs.statSync(`${dependancies}/workflows`);
+			if(statWorkflows.isDirectory()) {
+				hydrateWorkflow(`${dependancies}/workflows/`);
+			}
+
+		}
+	} catch(e) {
+		const module = require(dependancies);
+		const module_path = path.dirname(require.resolve(dependancies));
+		Object.keys(module).map((val) => {
+			if(module[val].substr(0,1) === '.') {
+				module[val] = `${module_path}${module[val].substr(1)}`;
+			}
+		});
+		module.fromDependencies = true;
+		initialize(module);
 	}
-
-	queue.init(jobsDirectory, config);
 };
 
 /**
@@ -51,6 +68,33 @@ module.exports.register = async(workflowId, data) => {
 	});
 };
 
+function initialize(config) {
+	config = readConfiguration(config);
+	initParameters(config.parameters);
+
+	if(config.workflows_directory) {
+		hydrateWorkflow(config.workflows_directory);
+	}
+
+	queue.init(config.jobs_directory, config);
+}
+
+/**
+ * @param directory
+ */
+function hydrateWorkflow(directory) {
+	const workflowConfigFiles = analyzeWorkflows(directory);
+	for(const i in workflowConfigFiles) {
+		const id = Guid.raw();
+		workflows[id] = {
+			id: id,
+			workflow: workflowConfigFiles[i],
+			stages: queue.processStages(workflowConfigFiles[i])
+		};
+		replaceContentWithGlobalParameters(workflows[id].stages);
+	}
+}
+
 /**
  * @param directory
  * @returns {Promise.<Array>}
@@ -61,13 +105,17 @@ function analyzeWorkflows(directory) {
 
 	for(const i in workflows) {
 		try {
-			if(fs.existsSync(`${directory}${workflows[i]}/workflow.yml`)) {
-				configFiles.push(getContentWorkflowFile(`${directory}${workflows[i]}/workflow.yml`));
+			if(workflows[i] === 'workflow.yml') {
+				configFiles.push(getContentWorkflowFile(`${directory}/workflow.yml`));
 			} else {
-				configFiles = configFiles.concat(analyzeWorkflows(`${directory}${workflows[i]}/`));
+				if(fs.existsSync(`${directory}${workflows[i]}/workflow.yml`)) {
+					configFiles.push(getContentWorkflowFile(`${directory}${workflows[i]}/workflow.yml`));
+				} else {
+					configFiles = configFiles.concat(analyzeWorkflows(`${directory}${workflows[i]}/`));
+				}
 			}
 		} catch(e) {
-			console.log(e.message);
+			throw e;
 		}
 	}
 
@@ -175,46 +223,46 @@ function getDataCompareFromKey(key, data) {
 /**
  * Read config
  * @param config
+ * @param fromDependencies
  */
 function readConfiguration(config) {
-	if (config && config.workflows_directory) {
-		workflowsDirectory = config.workflows_directory;
-	} else {
-		workflowsDirectory = process.env.WORKFLOWS_DIRECTORY;
+
+	if(!config.fromDependencies) {
+		config.fromDependencies = false;
 	}
 
-	if (config && config.jobs_directory) {
-		jobsDirectory = config.jobs_directory;
-	} else {
-		jobsDirectory = process.env.JOBS_DIRECTORY;
+	if (config && config.parameters && config.parameters.substr(-3) !== 'yml') {
+		throw new Error(`Parameters file is not YAML : ${config.parameters}`);
 	}
 
-	if(!workflowsDirectory) {
+	if (!config.fromDependencies && (!config || !config.workflows_directory)) {
 		throw new Error('Workflows directory missing');
 	}
 
-	if(!jobsDirectory) {
+	if (!config || !config.jobs_directory) {
 		throw new Error('Jobs directory missing');
 	}
 
-	if(workflowsDirectory.substr(workflowsDirectory.length -1) !== '/') {
-		workflowsDirectory = `${workflowsDirectory}/`;
+	if(config.workflows_directory && config.workflows_directory.substr(config.workflows_directory.length -1) !== '/') {
+		config.workflows_directory = `${config.workflows_directory}/`;
 	}
 
-	if(jobsDirectory.substr(jobsDirectory.length -1) !== '/') {
-		jobsDirectory = `${jobsDirectory}/`;
+	if(config.jobs_directory.substr(config.jobs_directory.length -1) !== '/') {
+		config.jobs_directory = `${config.jobs_directory}/`;
 	}
+
+	return config;
 }
 
 /**
  * Initialize parameters file
- * @param config
+ * @param parameters_file
  */
-function initParameters(config) {
-	const file = config.parameters || process.env.PARAMETERS || null;
+function initParameters(parameters_file) {
+	const file = parameters_file || null;
 
 	if(!file || !fs.existsSync(file)) {
-		console.log(`${file} not found`);
+		console.log(`Parameters not found at ${file}`);
 	} else {
 		globalParameters = yaml.safeLoad(fs.readFileSync(file, 'utf8'))['parameters'];
 		const regex = /^%env\(([a-zA-Z0-9-_]+)\)%$/;

@@ -30,7 +30,7 @@ module.exports.init = (jobsDirectory, config) => {
 	queue = new Queue(this.getQueueName(), `redis://${redisHost}:${redisPort}`);
 	queue.empty();
 
-	processJobs(jobsDirectory, '');
+	processJobs(jobsDirectory, '', config);
 
 	queue.on('completed', (job, result) => {
 		addChildToQueue(stageOnSuccess, job, result);
@@ -119,7 +119,7 @@ function addStage(stage, data, previous, confParent) {
  * @param dir
  * @param prefix
  */
-function processJobs(dir, prefix) {
+function processJobs(dir, prefix, config) {
 	promisify(fs.readdir)(dir)
 		.then((dirList) => {
 			dirList.map((value) => {
@@ -129,6 +129,10 @@ function processJobs(dir, prefix) {
 					processJobs(`${dir}${value}/`, `${prefix}${value}/`);
 				}
 				else {
+					if(config && config.fromDependencies) {
+						prefix = `$dependencies/${prefix}`;
+					}
+
 					console.log(`Job processed : ${prefix}${value.substring(0, value.length - 3)}`);
 					queue.process(prefix+value.substring(0, value.length - 3), require(`${dir}${value}`));
 				}
