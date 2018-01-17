@@ -124,6 +124,7 @@ function processJobs(dir, prefix, config) {
 	promisify(fs.readdir)(dir)
 		.then((dirList) => {
 			dirList.map((value) => {
+				let _prefix = prefix;
 				const file = fs.statSync(dir+value);
 
 				if(file.isDirectory()) {
@@ -131,11 +132,11 @@ function processJobs(dir, prefix, config) {
 				}
 				else {
 					if(config && config.fromDependencies) {
-						prefix = `$${config.name}/${prefix}`;
+						_prefix = `$${config.name}/${_prefix}`;
 					}
 
-					console.log(`Job processed : ${prefix}${value.substring(0, value.length - 3)}`);
-					queue.process(prefix+value.substring(0, value.length - 3), require(`${dir}${value}`));
+					console.log(`Job processed : ${_prefix}${value.substring(0, value.length - 3)}`);
+					queue.process(_prefix+value.substring(0, value.length - 3), require(`${dir}${value}`));
 				}
 			});
 		});
