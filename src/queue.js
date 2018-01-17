@@ -118,6 +118,7 @@ function addStage(stage, data, previous, confParent) {
  * Process all jobs
  * @param dir
  * @param prefix
+ * @param config
  */
 function processJobs(dir, prefix, config) {
 	promisify(fs.readdir)(dir)
@@ -126,11 +127,11 @@ function processJobs(dir, prefix, config) {
 				const file = fs.statSync(dir+value);
 
 				if(file.isDirectory()) {
-					processJobs(`${dir}${value}/`, `${prefix}${value}/`);
+					processJobs(`${dir}${value}/`, `${prefix}${value}/`, config);
 				}
 				else {
 					if(config && config.fromDependencies) {
-						prefix = `$dependencies/${prefix}`;
+						prefix = `$${config.name}/${prefix}`;
 					}
 
 					console.log(`Job processed : ${prefix}${value.substring(0, value.length - 3)}`);

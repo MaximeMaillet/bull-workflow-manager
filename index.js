@@ -38,6 +38,9 @@ module.exports.addDependencies = (dependancies) => {
 		}
 	} catch(e) {
 		const module = require(dependancies);
+		if(!module.name) {
+			throw new Error(`Dependencies require name : ${dependancies}`);
+		}
 		const module_path = path.dirname(require.resolve(dependancies));
 		Object.keys(module).map((val) => {
 			if(module[val].substr(0,1) === '.') {
