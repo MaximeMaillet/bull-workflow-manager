@@ -284,37 +284,21 @@ function initParameters(parameters_file) {
  * @param stages
  */
 function replaceContentWithGlobalParameters(stages) {
-	let stage = null;
-	const reg = /^%([a-zA-Z0-9-_]+)%$/;
-
 	for(const i in stages) {
-		stage = stages[i];
-		if(stage.getData() !== null) {
-			Object.keys(stage.getData()).map((value) => {
-				stage.getData()[value] = replaceDataWithParameters(stage.getData()[value], globalParameters);
-			});
-		}
+		replaceStageWithGlobalParameters(stages[i]);
+	}
+}
+
+function replaceStageWithGlobalParameters(stage) {
+	if(stage.getData() !== null) {
+		Object.keys(stage.getData()).map((value) => {
+			stage.getData()[value] = replaceDataWithParameters(stage.getData()[value], globalParameters);
+		});
 	}
 
-	// for(const i in workflowContent.stages) {
-	// 	stage = workflowContent.stages[i][Object.keys(workflowContent.stages[i])[0]];
-	//
-	//
-	// 	if(stage.hasOwnProperty('on_success')) {
-	//
-	// 	}
-	//
-	// 	if(stage.hasOwnProperty('on_fail')) {
-	//
-	// 	}
-	// }
-	//
-	// Object.keys(globalParameters).map((param) => {
-	// 	// console.log(param);
-	// });
-
-
-	// throw new Error('coucouc');
+	if(stage.getOnSuccess() !== null) {
+		replaceStageWithGlobalParameters(stage.getOnSuccess().child);
+	}
 }
 
 /**
